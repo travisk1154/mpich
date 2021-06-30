@@ -8,10 +8,14 @@
 
 #include "ipc_p2p.h"
 
-MPL_STATIC_INLINE_PREFIX int MPIDI_IPC_am_recv_rdma_read(void *lmt_msg, size_t recv_data_sz,
-                                                         MPIR_Request * rreq)
+//MPL_STATIC_INLINE_PREFIX int MPIDI_IPC_am_recv_rdma_read(void *lmt_msg, size_t recv_data_sz,
+//                                                         MPIR_Request * rreq)
+MPL_STATIC_INLINE_PREFIX int MPIDI_IPC_am_recv_rdma_read(MPIR_Request * rreq)
 {
     void *flattened_type;
+    void *lmt_msg;
+
+    lmt_msg = MPIDI_POSIX_AMREQUEST_HDR(rreq, buf)
     MPIDI_IPC_ctrl_send_lmt_rts_t *slmt_rts_hdr = (MPIDI_IPC_ctrl_send_lmt_rts_t *) lmt_msg;
 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_IPC_AM_RECV_RDMA);
