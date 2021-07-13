@@ -8,7 +8,7 @@
 
 #include "ipc_p2p.h"
 
-MPL_STATIC_INLINE_PREFIX int MPIDI_IPC_am_recv_rdma_read(void *lmt_msg, size_t recv_data_sz,
+MPL_STATIC_INLINE_PREFIX int MPIDI_IPC_am_recv(void *lmt_msg, size_t recv_data_sz,
                                                          MPIR_Request * rreq)
 {
     void *flattened_type;

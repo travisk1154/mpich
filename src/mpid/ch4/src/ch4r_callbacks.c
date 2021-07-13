@@ -598,19 +598,11 @@ int recv_target_ipc_rdma_cb(MPIR_Request * rreq)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDIG_IPC_hdr_t ipc_rdma_ack;
-    MPI_Aint ipc_hdr_sz;
-    void *ipc_hdr;
 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_RECV_TARGET_IPC_RDMA_CB);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_RECV_TARGET_IPC_RDMA_CB);
 
-    ipc_hdr = MPIDIG_REQUEST(rreq, buffer);
-    MPIDI_Datatype_check_size(datatype, count, ipc_hdr_sz);
-    MPIDIG_REQUEST(rreq, buffer) = MPIDI_SHM_REQUEST(rreq, ipc).ipc_buf;
-    MPIDIG_REQUEST(rreq, count) = MPIDI_SHM_REQUEST(rreq, ipc).ipc_count;
-    MPIDIG_REQUEST(rreq, datatype) = MPIDI_SHM_REQUEST(rreq, ipc).ipc_datatype;
-
-    mpi_errno = MPIDI_SHM_am_recv_rdma_read(ipc_hdr, ipc_hdr_sz, rreq);
+    mpi_errno = MPIDI_SHM_am_recv(rreq);
     MPIR_ERR_CHECK(mpi_errno);
 
     ipc_rdma_ack.sreq = MPIDI_SHM_REQUEST(rreq, ipc).sreq;

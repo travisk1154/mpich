@@ -97,12 +97,23 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_SHM_am_isend_reply(MPIR_Comm * comm,
 MPL_STATIC_INLINE_PREFIX int MPIDI_SHM_am_recv(MPIR_Request * rreq)
 {
     int ret = MPI_SUCCESS;
+    MPIDIG_IPC_hdr_t ipc_rdma_ack;
+    MPI_Aint ipc_hdr_sz;
+    void *ipc_hdr;
+    int count;
 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_SHM_AM_RECV);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_SHM_AM_RECV);
 
     /* TODO: handle IPC receive here */
-    MPIDI_IPC_am_recv_rdma_read(MPIDI_POSIX_AMREQUEST_HDR(rreq, buf), rreq);
+    ipc_hdr = MPIDIG_REQUEST(rreq, buffer);
+    MPIDIG_REQUEST(rreq, buffer) = MPIDI_SHM_REQUEST(rreq, ipc).ipc_buf;
+    MPIDIG_REQ1UEST(rreq, count) = MPIDI_SHM_REQUEST(rreq, ipc).ipc_count;
+    MPIDIG_REQUEST(rreq, datatype) = MPIDI_SHM_REQUEST(rreq, ipc).ipc_datatype;
+    MPIDI_Datatype_check_size(MPIDIG_REQUEST(rreq, datatype), count, ipc_hdr_sz);
+
+    //MPIDI_IPC_am_recv(MPIDI_POSIX_AMREQUEST_HDR(rreq, buf), rreq);
+    MPIDI_IPC_am_recv(ipc_hdr, ipc_hdr_sz, rreq);
 
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_SHM_AM_RECV);
     return ret;
@@ -159,13 +170,13 @@ MPL_STATIC_INLINE_PREFIX bool MPIDI_SHM_am_check_eager(MPI_Aint am_hdr_sz, MPI_A
     //Get the address using the true_lb offset
     vaddr = (char *) buf + true_lb;
 
-    //Get GPU attribute
-    MPIR_GPU_query_pointer_attr(vaddr, &ipc_attr.gpu_attr);
 
     //If message is too small use posix eager
     if(am_hdr_sz + data_sz) <= MPIDI_POSIX_am_eager_limit() {
         return true;
     } else {
+        //Get GPU attribute
+        MPIR_GPU_query_pointer_attr(vaddr, &ipc_attr.gpu_attr);
         if (ipc_attr.gpu_attr.type == MPL_GPU_POINTER_DEV) {
             if(data_sz >= ipc_attr.threshold.send_lmt_sz) {
                 return true;
