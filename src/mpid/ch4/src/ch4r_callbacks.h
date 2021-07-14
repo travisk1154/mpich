@@ -29,4 +29,14 @@ int MPIDIG_ssend_ack_target_msg_cb(int handler_id, void *am_hdr, void *data,
 int MPIDIG_send_cts_target_msg_cb(int handler_id, void *am_hdr, void *data, MPI_Aint p_data_sz,
                                   int is_local, int is_async, MPIR_Request ** req);
 
+int MPIDIG_send_ipc_datatype_req_target_msg_cb(int handler_id, void *am_hdr, void *data,
+                                               MPI_Aint in_data_sz, int is_local, int is_async,
+                                               MPIR_Request ** req);
+
+int MPIDIG_send_ipc_datatype_ack_origin_cb(int handler_id, void *am_hdr, void *data,
+                                           MPI_Aint in_data_sz, int is_local, int is_async,
+                                           MPIR_Request ** req);
+
+int recv_target_ipc_rdma_cb(MPIR_Request * rreq);
+
 #endif /* CH4R_CALLBACKS_H_INCLUDED */

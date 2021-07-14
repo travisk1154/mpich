@@ -12,6 +12,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_IPC_am_recv(void *lmt_msg, size_t recv_data_s
                                                          MPIR_Request * rreq)
 {
     void *flattened_type;
+    int mpi_errno;
+
     MPIDI_IPC_ctrl_send_lmt_rts_t *slmt_rts_hdr = (MPIDI_IPC_ctrl_send_lmt_rts_t *) lmt_msg;
 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_IPC_AM_RECV_RDMA);

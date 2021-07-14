@@ -283,10 +283,15 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_IPCI_handle_lmt_recv(MPIDI_IPCI_type_t ipc_ty
 
     ack_ctrl_hdr.ipc_slmt_fin.ipc_type = ipc_type;
     ack_ctrl_hdr.ipc_slmt_fin.req_ptr = sreq_ptr;
+
+//  MPL_STATIC_INLINE_PREFIX int MPIDI_SHM_do_ctrl_send(int rank, MPIR_Comm * comm,
+//                           int ctrl_id, MPI_Aint ctrl_hdr_sz,
+//                           void *ctrl_hdr, MPIR_Request * request)
+//
     mpi_errno = MPIDI_SHM_do_ctrl_send(MPIDIG_REQUEST(rreq, rank),
-                                       MPIDIG_context_id_to_comm(MPIDIG_REQUEST
-                                                                 (rreq, context_id)),
-                                       MPIDI_IPC_SEND_LMT_FIN, &ack_ctrl_hdr);
+                                       rreq->comm,
+                                       MPIDI_IPC_SEND_LMT_FIN, sizeof(ack_ctrl_hdr),
+                                       &ack_ctrl_hdr, rreq);
     MPIR_ERR_CHECK(mpi_errno);
 
     MPIR_Datatype_release_if_not_builtin(MPIDIG_REQUEST(rreq, datatype));

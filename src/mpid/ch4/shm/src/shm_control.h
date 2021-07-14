@@ -15,18 +15,24 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_SHM_do_ctrl_send(int rank, MPIR_Comm * comm,
 {
     int ret;
     int protocol;
+    int mpi_errno;
+
     MPIR_Errflag_t errflag = MPIR_ERR_NONE;
     MPIDIG_IPC_hdr_t ipc_hdr;
 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_SHM_DO_CTRL_SEND);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_SHM_DO_CTRL_SEND);
 
-    ipc_hdr.req_ptr = request;
+    ipc_hdr.sreq_ptr = request;
+
+    //Need new function here
+    /*
     mpi_errno =
         MPIDIG_isend_impl_new(&ctrl_hdr, ctrl_hdr_sz, MPI_BYTE, rank, tag, comm,
                               context_offset, addr, &request, errflag, ctrl_id, &ipc_hdr,
                               sizeof(MPIDIG_IPC_hdr_t), protocol);
-
+    */
+    printf("In MPIDI_SHM_do_ctrl_send\n");
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_SHM_DO_CTRL_SEND);
     return ret;
 }

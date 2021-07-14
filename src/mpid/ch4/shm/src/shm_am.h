@@ -9,6 +9,7 @@
 #include <shm.h>
 #include "../posix/shm_inline.h"
 #include "../ipc/src/shm_inline.h"
+#include "../ipc/src/ipc_am.h"
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_SHM_am_send_hdr(int rank, MPIR_Comm * comm,
                                                    int handler_id, const void *am_hdr,
@@ -108,7 +109,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_SHM_am_recv(MPIR_Request * rreq)
     /* TODO: handle IPC receive here */
     ipc_hdr = MPIDIG_REQUEST(rreq, buffer);
     MPIDIG_REQUEST(rreq, buffer) = MPIDI_SHM_REQUEST(rreq, ipc).ipc_buf;
-    MPIDIG_REQ1UEST(rreq, count) = MPIDI_SHM_REQUEST(rreq, ipc).ipc_count;
+    MPIDIG_REQUEST(rreq, count) = MPIDI_SHM_REQUEST(rreq, ipc).ipc_count;
     MPIDIG_REQUEST(rreq, datatype) = MPIDI_SHM_REQUEST(rreq, ipc).ipc_datatype;
     MPIDI_Datatype_check_size(MPIDIG_REQUEST(rreq, datatype), count, ipc_hdr_sz);
 
@@ -168,11 +169,11 @@ MPL_STATIC_INLINE_PREFIX bool MPIDI_SHM_am_check_eager(MPI_Aint am_hdr_sz, MPI_A
     MPIDI_Datatype_check_contig_size_lb(datatype, count, dt_contig, data_sz, true_lb);
 
     //Get the address using the true_lb offset
-    vaddr = (char *) buf + true_lb;
+    vaddr = (char *) data + true_lb;
 
 
     //If message is too small use posix eager
-    if(am_hdr_sz + data_sz) <= MPIDI_POSIX_am_eager_limit() {
+    if(am_hdr_sz + data_sz <= MPIDI_POSIX_am_eager_limit()) {
         return true;
     } else {
         //Get GPU attribute
@@ -185,18 +186,5 @@ MPL_STATIC_INLINE_PREFIX bool MPIDI_SHM_am_check_eager(MPI_Aint am_hdr_sz, MPI_A
             return false;
         }
     }
-}
-
-MPL_STATIC_INLINE_PREFIX int MPIDI_SHM_am_recv_rdma_read(void *lmt_msg, size_t recv_data_sz,
-                                                         MPIR_Request * rreq)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_SHM_AM_RECV_RDMA);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_SHM_AM_RECV_RDMA);
-
-    mpi_errno = MPIDI_IPC_am_recv_rdma_read(lmt_msg, recv_data_sz, rreq);
-
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_SHM_AM_RECV_RDMA);
-    return mpi_errno;
 }
 #endif /* SHM_AM_H_INCLUDED */
