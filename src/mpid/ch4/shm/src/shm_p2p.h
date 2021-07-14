@@ -20,8 +20,9 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_SHM_mpi_isend(const void *buf, MPI_Aint count
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_SHM_MPI_ISEND);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_SHM_MPI_ISEND);
 
-    mpi_errno = MPIDI_IPC_mpi_isend(buf, count, datatype, rank, tag, comm,
-                                    context_offset, addr, request);
+    mpi_errno = MPIDIG_mpi_isend(buf, count, datatype, rank, tag, comm,
+                                 context_offset, addr, request);
+                                 
     MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
@@ -89,7 +90,9 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_SHM_mpi_irecv(void *buf, MPI_Aint count, MPI_
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_SHM_MPI_IRECV);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_SHM_MPI_IRECV);
 
-    mpi_errno = MPIDI_IPC_mpi_irecv(buf, count, datatype, rank, tag, comm, context_offset, request);
+    mpi_errno = MPIDIG_mpi_irecv(buf, count, datatype, rank, tag, comm,
+                                    context_offset, request,
+                                    1, NULL);
     MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:

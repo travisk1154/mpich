@@ -18,4 +18,12 @@ typedef struct {
     MPIDI_SHMI_ctrl_cb ctrl_cbs[MPIDI_SHMI_CTRL_IDS_MAX];
 } MPIDI_SHM_Global_t;
 
+typedef enum {
+    MPIDI_SHM_AMTYPE_SHORT,
+    MPIDI_SHM_AMTYPE_SHORT,
+    MPIDI_SHM_AMTYPE_PIPELINE
+    MPIDI_SHM_AMTYPE_XPMEM_IPC
+    MPIDI_SHM_AMTYPE_GPU_IPC
+} MPIDI_SHM_am_type_t;
+
 #endif /* SHM_PRE_H_INCLUDED */

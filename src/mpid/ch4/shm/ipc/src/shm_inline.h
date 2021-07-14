@@ -8,6 +8,7 @@
 
 #include "ipc_send.h"
 #include "ipc_recv.h"
+#include "ipc_am.h"
 
 /* Not-inlined shm functions */
 #include "ipc_noinline.h"

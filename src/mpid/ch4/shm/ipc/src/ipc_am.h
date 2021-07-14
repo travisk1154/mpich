@@ -1,0 +1,17 @@
+/*
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
+ */
+
+#ifndef IPC_AM_H_INCLUDED
+#define IPC_AM_H_INCLUDED
+
+MPL_STATIC_INLINE_PREFIX int MPIDI_IPC_am_isend()
+{
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_IPC_AM_ISEND);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_IPC_AM_ISEND);
+
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_IPC_AM_ISEND);
+}
+
+#endif /* IPC_AM_H_INCLUDED */

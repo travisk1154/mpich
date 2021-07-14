@@ -111,7 +111,7 @@ typedef struct MPIDI_POSIX_am_request {
     MPI_Datatype datatype;
     size_t segment_first;
     size_t segment_size;
-
+    uint8_t am_type_choice;             /* save amtype to avoid double checking */
     int eager_recv_posted_hook_grank;
 
     MPIDI_POSIX_am_request_header_t *req_hdr;

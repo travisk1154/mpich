@@ -15,7 +15,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_SHM_am_send_hdr(int rank, MPIR_Comm * comm,
                                                    MPI_Aint am_hdr_sz)
 {
     int ret;
-
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_SHM_AM_SEND_HDR);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_SHM_AM_SEND_HDR);
 
@@ -32,12 +31,65 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_SHM_am_isend(int rank, MPIR_Comm * comm, int 
                                                 MPI_Datatype datatype, MPIR_Request * sreq)
 {
     int ret;
+    bool dt_contig;
+    MPI_Aint true_lb;
+    void *vaddr;
+    MPI_Aint data_sz;
+    MPIDI_IPCI_ipc_attr_t ipc_attr;
 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_SHM_AM_ISEND);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_SHM_AM_ISEND);
 
-    ret = MPIDI_POSIX_am_isend(rank, comm, MPIDI_POSIX_AM_HDR_CH4, handler_id, am_hdr,
-                               am_hdr_sz, data, count, datatype, sreq);
+    //Switch based on request type choice
+    switch(MPIDI_POSIX_AMREQUEST(sreq, am_type_choice)){
+
+        //No choice was set, so we need to determine which path to chose
+        case MPIDI_SHM_AMTYPE_NONE:
+            //Get dt_contig & true_lb
+            MPIDI_Datatype_check_size(datatype, count, data_sz);
+            MPIDI_Datatype_check_contig_size_lb(datatype, count, dt_contig, data_sz, true_lb);
+
+            //Get the address using the true_lb offset
+            vaddr = (char *) data + true_lb;
+
+            //Get GPU attribute
+            MPIR_GPU_query_pointer_attr(vaddr, &ipc_attr.gpu_attr);
+
+            //If message is too small use posix. Otherwise check
+            //if the message is big enough for ipc. Worst case default to pipeline
+            if(am_hdr_sz + data_sz) <= MPIDI_POSIX_am_eager_limit() {
+                ret = MPIDI_POSIX_am_isend(rank, comm, MPIDI_POSIX_AM_HDR_CH4, handler_id, am_hdr,
+                                           am_hdr_sz, data, count, datatype, sreq);
+            } else {
+                if(ipc_attr.gpu_attr.type == MPL_GPU_POINTER_DEV) {
+                    if(data_sz >= ipc_attr.threshold.send_lmt_sz) {
+                        ret = MPIDI_IPC_am_isend();
+                    }   
+                } else {
+                    ret = MPIDI_POSIX_am_isend(rank, comm, MPIDI_POSIX_AM_HDR_CH4, handler_id, am_hdr,
+                                               am_hdr_sz, data, count, datatype, sreq);
+                }
+            }
+
+            break;
+
+        case MPIDI_SHM_AMTYPE_SHORT:
+        case MPIDI_SHM_AMTYPE_PIPELINE:
+            ret = MPIDI_POSIX_am_isend(rank, comm, MPIDI_POSIX_AM_HDR_CH4, handler_id, am_hdr,
+                                        am_hdr_sz, data, count, datatype, sreq);
+            MPIDI_POSIX_AMREQUEST(sreq, am_type_choice) = MPIDI_SHM_AMTYPE_NONE;
+            break;
+
+        case MPIDI_SHM_AMTYPE_GPU_IPC:
+            ret = MPIDI_IPC_am_isend();
+            MPIDI_POSIX_AMREQUEST(sreq, am_type_choice) = MPIDI_SHM_AMTYPE_NONE;
+            break;
+
+        case MPIDI_SHM_AMTYPE_XPMEM_IPC:
+            //Need to add xpmem code
+            break;
+    }       
+
 
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_SHM_AM_ISEND);
     return ret;
@@ -130,8 +182,38 @@ MPL_STATIC_INLINE_PREFIX bool MPIDI_SHM_am_check_eager(MPI_Aint am_hdr_sz, MPI_A
                                                        const void *data, MPI_Aint count,
                                                        MPI_Datatype datatype, MPIR_Request * sreq)
 {
-    /* TODO: add checking for IPC transmission */
-    return (am_hdr_sz + data_sz) <= MPIDI_POSIX_am_eager_limit();
+    bool dt_contig;
+    MPI_Aint true_lb;
+    void *vaddr;
+    MPIDI_IPCI_ipc_attr_t ipc_attr;
+
+    //Get dt_contig & true_lb
+    MPIDI_Datatype_check_contig_size_lb(datatype, count, dt_contig, data_sz, true_lb);
+
+    //Get the address using the true_lb offset
+    vaddr = (char *) data + true_lb;
+
+    //Get GPU attribute
+    MPIR_GPU_query_pointer_attr(vaddr, &ipc_attr.gpu_attr);
+
+    //If message is too small use posix eager. Otherwise check
+    //if the message is big enough for ipc. We save the decisions
+    //in am_type_choice for later use.
+
+    if(am_hdr_sz + data_sz) <= MPIDI_POSIX_am_eager_limit() {
+        MPIDI_POSIX_AMREQUEST(sreq, am_type_choice) = MPIDI_SHM_AMTYPE_SHORT;
+        return true;
+    } else {
+        if(ipc_attr.gpu_attr.type == MPL_GPU_POINTER_DEV) {
+            if(data_sz >= ipc_attr.threshold.send_lmt_sz) {
+                MPIDI_POSIX_AMREQUEST(sreq, am_type_choice) = MPIDI_SHM_AMTYPE_GPU_IPC;
+                return true;
+            }   
+        } else {
+            MPIDI_POSIX_AMREQUEST(sreq, am_type_choice) = MPIDI_SHM_AMTYPE_PIPELINE;
+            return false;
+        }
+    } //Choice for XPMEM needs to be added
 }
 
 #endif /* SHM_AM_H_INCLUDED */
